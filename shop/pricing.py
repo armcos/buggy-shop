@@ -26,6 +26,22 @@ def get_bulk_discount(quantity: int, tiers: List[Tuple[int, float]] = None) -> f
     return 0.0
 
 
+def _build_line(sku: str, price: float, qty: int,
+                tiers: List[Tuple[int, float]] = None) -> Dict:
+    """Build a single invoice line, applying the appropriate bulk discount."""
+    discount_pct = get_bulk_discount(qty, tiers)
+    discounted = price * (1 - discount_pct / 100)
+    line_total = discounted * qty
+    return {
+        "sku": sku,
+        "unit_price": price,
+        "quantity": qty,
+        "discount_pct": discount_pct,
+        "line_total": round(line_total, 2),
+        "_raw_line_total": line_total,
+    }
+
+
 def compute_invoice(items: Dict[str, Tuple[float, int]],
                     tiers: List[Tuple[int, float]] = None) -> Dict:
     """Compute an invoice from a dict of {sku: (unit_price, quantity)}.
@@ -35,17 +51,9 @@ def compute_invoice(items: Dict[str, Tuple[float, int]],
     result = {"lines": [], "total": 0.0}
 
     for sku, (price, qty) in items.items():
-        discount_pct = get_bulk_discount(qty, tiers)
-        discounted = price * (1 - discount_pct / 100)
-        line_total = discounted * qty
-        result["lines"].append({
-            "sku": sku,
-            "unit_price": price,
-            "quantity": qty,
-            "discount_pct": discount_pct,
-            "line_total": round(line_total, 2),
-        })
-        result["total"] += line_total
+        line = _build_line(sku, price, qty, tiers)
+        result["total"] += line.pop("_raw_line_total")
+        result["lines"].append(line)
 
     result["total"] = round(result["total"], 2)
     return result
