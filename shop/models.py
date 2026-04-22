@@ -25,6 +25,7 @@ class OrderLine:
 
     @property
     def subtotal(self) -> float:
+        """Return the undiscounted line subtotal (unit price * quantity)."""
         return self.product.price * self.quantity
 
 
@@ -36,6 +37,7 @@ class Order:
     _discount_rules: dict = field(default_factory=dict)
 
     def add_line(self, product: Product, quantity: int):
+        """Append a new OrderLine to this order."""
         self.lines.append(OrderLine(product=product, quantity=quantity))
 
     def register_discount(self, sku: str, percentage: float):
@@ -44,6 +46,7 @@ class Order:
 
     @property
     def total(self) -> float:
+        """Compute the order total, applying per-SKU discount rules when present."""
         total = 0.0
         for line in self.lines:
             sku = line.product.sku
