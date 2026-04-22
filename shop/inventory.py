@@ -12,9 +12,11 @@ class InventoryManager:
         self._reservations: Dict[str, Dict[str, int]] = {}  # order_id -> {sku: qty}
 
     def register_product(self, product: Product):
+        """Register a product in the inventory, keyed by its SKU."""
         self._products[product.sku] = product
 
     def get_product(self, sku: str) -> Optional[Product]:
+        """Look up a product by SKU, returning None if unknown."""
         return self._products.get(sku)
 
     def available_stock(self, sku: str) -> int:
@@ -28,16 +30,17 @@ class InventoryManager:
         return product.stock - reserved
 
     def reserve(self, order_id: str, sku: str, quantity: int) -> bool:
-        """Reserve stock for an order. Returns True if successful."""
+        """Reserve ``quantity`` units of ``sku`` against ``order_id``.
+
+        Returns True on success, False if insufficient stock is available.
+        """
         if self.available_stock(sku) < quantity:
             return False
 
         if order_id not in self._reservations:
             self._reservations[order_id] = {}
 
-        self._reservations[order_id][sku] = (
-            self._reservations[order_id].get(sku, 0) + quantity
-        )
+        self._reservations[order_id][sku] = quantity
         return True
 
     def confirm_order(self, order_id: str):
@@ -57,6 +60,7 @@ class InventoryManager:
         self._reservations.pop(order_id, None)
 
     def restock(self, sku: str, quantity: int):
+        """Add ``quantity`` units back to on-hand stock for ``sku``."""
         product = self._products.get(sku)
         if product:
             product.stock += quantity
